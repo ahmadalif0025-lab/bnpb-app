@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sistem Informasi Penanggulangan Bencana BNPB - Dashboard monitoring bencana, posko, logistik, dan relawan secara terintegrasi.">
+    <title>BNPB - Sistem Informasi Penanggulangan Bencana</title>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<!-- Toast Container -->
+<div id="toastContainer" class="toast-container"></div>
+
+<!-- Sidebar Overlay (mobile) -->
+<div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<div class="app-wrapper">
+    <!-- ============================================
+         SIDEBAR
+         ============================================ -->
+    <aside id="sidebar" class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">
+                <i class="fas fa-shield-halved"></i>
+            </div>
+            <div class="brand-text">
+                <h2>BNPB</h2>
+                <p>Sistem Terintegrasi</p>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section-title">Menu Utama</div>
+            <div class="nav-item active" data-page="dashboard">
+                <i class="fas fa-chart-line"></i>
+                <span>Dashboard</span>
+            </div>
+            <div class="nav-item" data-page="bencana">
+                <i class="fas fa-house-crack"></i>
+                <span>Data Bencana</span>
+                <span class="nav-badge" id="navBadgeBencana">15</span>
+            </div>
+            <div class="nav-item" data-page="wilayah">
+                <i class="fas fa-sitemap"></i>
+                <span>Data Wilayah</span>
+                <span class="nav-badge" style="background:var(--accent-primary)">20 Prov</span>
+            </div>
+
+            <div class="nav-section-title">Penanganan</div>
+            <div class="nav-item" data-page="posko">
+                <i class="fas fa-tent"></i>
+                <span>Posko Pengungsian</span>
+            </div>
+            <div class="nav-item" data-page="logistik">
+                <i class="fas fa-boxes-stacked"></i>
+                <span>Logistik Bantuan</span>
+            </div>
+            <div class="nav-item" data-page="relawan">
+                <i class="fas fa-people-group"></i>
+                <span>Data Relawan</span>
+            </div>
+
+            <div class="nav-section-title">Lainnya</div>
+            <div class="nav-item" style="opacity:0.4;pointer-events:none">
+                <i class="fas fa-map-location-dot"></i>
+                <span>Peta Bencana</span>
+            </div>
+            <div class="nav-item" style="opacity:0.4;pointer-events:none">
+                <i class="fas fa-file-lines"></i>
+                <span>Laporan</span>
+            </div>
+            <div class="nav-item" style="opacity:0.4;pointer-events:none">
+                <i class="fas fa-gear"></i>
+                <span>Pengaturan</span>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- ============================================
+         MAIN CONTENT
+         ============================================ -->
+    <main class="main-content">
+        <!-- Top Header -->
+        <header class="top-header">
+            <div class="header-left">
+                <button class="menu-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1 class="page-title" id="pageTitle"><i class="fas fa-chart-line"></i> Dashboard</h1>
+            </div>
+            <div class="header-right">
+                <button class="header-btn" title="Notifikasi">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge-dot"></span>
+                </button>
+                <button class="header-btn" title="Refresh" onclick="navigateTo(currentPage)">
+                    <i class="fas fa-arrows-rotate"></i>
+                </button>
+                <div class="user-avatar" title="Admin BNPB">AD</div>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="content-area">
+
+            <!-- ============================================
+                 PAGE: DASHBOARD
+                 ============================================ -->
+            <section id="page-dashboard" class="page-section active">
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card blue">
+                        <div class="stat-card-header">
+                            <div class="stat-icon blue"><i class="fas fa-house-crack"></i></div>
+                        </div>
+                        <div class="stat-value" id="statTotalBencana">-</div>
+                        <div class="stat-label">Total Bencana</div>
+                    </div>
+                    <div class="stat-card orange">
+                        <div class="stat-card-header">
+                            <div class="stat-icon orange"><i class="fas fa-triangle-exclamation"></i></div>
+                        </div>
+                        <div class="stat-value" id="statBencanaAktif">-</div>
+                        <div class="stat-label">Bencana Aktif</div>
+                    </div>
+                    <div class="stat-card red">
+                        <div class="stat-card-header">
+                            <div class="stat-icon red"><i class="fas fa-heart-pulse"></i></div>
+                        </div>
+                        <div class="stat-value" id="statKorbanMeninggal">-</div>
+                        <div class="stat-label">Korban Meninggal</div>
+                    </div>
+                    <div class="stat-card cyan">
+                        <div class="stat-card-header">
+                            <div class="stat-icon cyan"><i class="fas fa-person-shelter"></i></div>
+                        </div>
+                        <div class="stat-value" id="statPengungsi">-</div>
+                        <div class="stat-label">Pengungsi Aktif</div>
+                    </div>
+                </div>
+
+                <!-- Row 2: More Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card green">
+                        <div class="stat-card-header">
+                            <div class="stat-icon green"><i class="fas fa-tent"></i></div>
+                        </div>
+                        <div class="stat-value" id="statPoskoAktif">-</div>
+                        <div class="stat-label">Posko Aktif</div>
+                    </div>
+                    <div class="stat-card blue">
+                        <div class="stat-card-header">
+                            <div class="stat-icon blue"><i class="fas fa-people-group"></i></div>
+                        </div>
+                        <div class="stat-value" id="statRelawanAktif">-</div>
+                        <div class="stat-label">Relawan Aktif</div>
+                    </div>
+                    <div class="stat-card red">
+                        <div class="stat-card-header">
+                            <div class="stat-icon red"><i class="fas fa-money-bill-trend-up"></i></div>
+                        </div>
+                        <div class="stat-value" id="statKerugian" style="font-size:20px">-</div>
+                        <div class="stat-label">Estimasi Kerugian</div>
+                    </div>
+                    <div class="stat-card orange">
+                        <div class="stat-card-header">
+                            <div class="stat-icon orange"><i class="fas fa-house-chimney-crack"></i></div>
+                        </div>
+                        <div class="stat-value" id="statRumahRusak">-</div>
+                        <div class="stat-label">Rumah Rusak</div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-chart-bar"></i> Bencana per Bulan (2026)</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="chartBulan"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-chart-pie"></i> Bencana per Jenis</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="chartJenis"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Disasters -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-clock-rotate-left"></i> Bencana Terbaru</h3>
+                        <button class="btn btn-secondary btn-sm" onclick="navigateTo('bencana')">
+                            <i class="fas fa-arrow-right"></i> Lihat Semua
+                        </button>
+                    </div>
+                    <div class="card-body no-padding" id="bencanaTerbaru">
+                        <div class="loading-spinner"><div class="spinner"></div>Memuat data...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================
+                 PAGE: DATA BENCANA
+                 ============================================ -->
+            <section id="page-bencana" class="page-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-house-crack"></i> Daftar Kejadian Bencana</h3>
+                        <button class="btn btn-primary" onclick="openFormBencana()">
+                            <i class="fas fa-plus"></i> Tambah Bencana
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="filter-row" style="flex-wrap:wrap; gap:10px">
+                            <div class="search-box" style="flex:1; min-width:200px">
+                                <i class="fas fa-magnifying-glass"></i>
+                                <input type="text" id="searchBencana" placeholder="Cari bencana, kab/kota, provinsi...">
+                            </div>
+                            <select class="form-control" id="filterNegara" style="max-width:140px; background:rgba(239,68,68,0.06); border-color:rgba(239,68,68,0.2); color:#fca5a5" disabled title="Tingkat 1: Negara">
+                                <option value="1">🇮🇩 Indonesia</option>
+                            </select>
+                            <select class="form-control" id="filterProvinsi" style="max-width:180px" onchange="onFilterProvinsiChange(this.value)" title="Tingkat 2: Provinsi">
+                                <option value="">Semua Provinsi</option>
+                            </select>
+                            <select class="form-control" id="filterKabupaten" style="max-width:200px" onchange="loadBencana()" title="Tingkat 3: Kabupaten/Kota">
+                                <option value="">Semua Kab/Kota</option>
+                            </select>
+                            <select class="form-control" id="filterJenis" style="max-width:180px">
+                                <option value="">Semua Jenis</option>
+                            </select>
+                            <select class="form-control" id="filterStatus" style="max-width:160px">
+                                <option value="">Semua Status</option>
+                                <option value="terjadi">Terjadi</option>
+                                <option value="tanggap_darurat">Tanggap Darurat</option>
+                                <option value="pemulihan">Pemulihan</option>
+                                <option value="selesai">Selesai</option>
+                            </select>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Kode</th>
+                                        <th>Judul Kejadian</th>
+                                        <th>Jenis</th>
+                                        <th><i class="fas fa-sitemap" style="color:var(--accent-primary)"></i> Wilayah (Indonesia ➔ Prov ➔ Kab/Kota)</th>
+                                        <th>Tanggal</th>
+                                        <th>Kerusakan</th>
+                                        <th>Status</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bencanaTableBody">
+                                    <tr><td colspan="8"><div class="loading-spinner"><div class="spinner"></div>Memuat data...</div></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================
+                 PAGE: POSKO
+                 ============================================ -->
+            <section id="page-posko" class="page-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-tent"></i> Daftar Posko Pengungsian</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nama Posko</th>
+                                        <th>Bencana</th>
+                                        <th>Kapasitas</th>
+                                        <th>Pengungsi</th>
+                                        <th>Penanggung Jawab</th>
+                                        <th>Kontak</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="poskoTableBody">
+                                    <tr><td colspan="7"><div class="loading-spinner"><div class="spinner"></div>Memuat data...</div></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================
+                 PAGE: LOGISTIK
+                 ============================================ -->
+            <section id="page-logistik" class="page-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-boxes-stacked"></i> Data Logistik Bantuan</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nama Barang</th>
+                                        <th>Kategori</th>
+                                        <th>Jumlah</th>
+                                        <th>Sumber</th>
+                                        <th>Bencana</th>
+                                        <th>Posko</th>
+                                        <th>Tgl Masuk</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="logistikTableBody">
+                                    <tr><td colspan="8"><div class="loading-spinner"><div class="spinner"></div>Memuat data...</div></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================
+                 PAGE: RELAWAN
+                 ============================================ -->
+            <section id="page-relawan" class="page-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-people-group"></i> Data Relawan</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nama</th>
+                                        <th>Organisasi</th>
+                                        <th>Keahlian</th>
+                                        <th>No. Telepon</th>
+                                        <th>Bencana</th>
+                                        <th>Bergabung</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="relawanTableBody">
+                                    <tr><td colspan="7"><div class="loading-spinner"><div class="spinner"></div>Memuat data...</div></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================
+                 PAGE: HIERARKI WILAYAH (Indonesia -> Provinsi -> Kab/Kota)
+                 ============================================ -->
+            <section id="page-wilayah" class="page-section">
+                <!-- Stat Cards Wilayah -->
+                <div class="stats-grid">
+                    <div class="stat-card blue">
+                        <div class="stat-card-header">
+                            <div class="stat-icon blue"><i class="fas fa-flag"></i></div>
+                        </div>
+                        <div class="stat-value" id="statWilayahNegara">1 Negara</div>
+                        <div class="stat-label">Tingkat 1: Negara (Indonesia)</div>
+                    </div>
+                    <div class="stat-card orange">
+                        <div class="stat-card-header">
+                            <div class="stat-icon orange"><i class="fas fa-map"></i></div>
+                        </div>
+                        <div class="stat-value" id="statWilayahProvinsi">20</div>
+                        <div class="stat-label">Tingkat 2: Provinsi Terdaftar</div>
+                    </div>
+                    <div class="stat-card cyan">
+                        <div class="stat-card-header">
+                            <div class="stat-icon cyan"><i class="fas fa-city"></i></div>
+                        </div>
+                        <div class="stat-value" id="statWilayahKabupaten">68</div>
+                        <div class="stat-label">Tingkat 3: Kabupaten & Kota</div>
+                    </div>
+                    <div class="stat-card red">
+                        <div class="stat-card-header">
+                            <div class="stat-icon red"><i class="fas fa-triangle-exclamation"></i></div>
+                        </div>
+                        <div class="stat-value" id="statWilayahTerdampak">15 Wilayah</div>
+                        <div class="stat-label">Wilayah Terdampak Bencana</div>
+                    </div>
+                </div>
+
+                <!-- Breadcrumb Banner -->
+                <div class="card mb-3" style="background:linear-gradient(135deg, rgba(59,130,246,0.12), rgba(16,185,129,0.08)); border:1px solid rgba(59,130,246,0.25)">
+                    <div class="card-body" style="padding:16px 20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px">
+                        <div style="display:flex; align-items:center; gap:12px">
+                            <div style="font-size:26px">🇮🇩</div>
+                            <div>
+                                <h4 style="margin:0; font-size:16px; font-weight:700">Hierarki Wilayah Penanggulangan Bencana</h4>
+                                <p style="margin:2px 0 0; font-size:13px; color:var(--text-muted)">
+                                    Struktur Berjenjang: <span class="chip-flag"><i class="fas fa-flag"></i> Indonesia</span> &rarr; 
+                                    <span class="chip-prov"><i class="fas fa-map"></i> 20 Provinsi</span> &rarr; 
+                                    <span class="chip-kab"><i class="fas fa-city"></i> 68 Kabupaten / Kota</span>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-center gap-2">
+                            <button class="btn btn-secondary btn-sm" onclick="loadWilayahTree()">
+                                <i class="fas fa-arrows-rotate"></i> Segarkan Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2-Column Explorer: Provinsi on left, Kabupaten/Kota on right -->
+                <div class="grid-2" style="grid-template-columns: 1fr 1.35fr; gap:20px">
+                    <!-- Left: Daftar Provinsi -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-map-location-dot"></i> Tingkat 2: Provinsi (<span id="countProvinsi">20</span>)</h3>
+                            <div class="search-box" style="max-width:180px">
+                                <i class="fas fa-magnifying-glass"></i>
+                                <input type="text" id="searchProvinsiInput" placeholder="Cari provinsi..." oninput="filterProvinsiList(this.value)">
+                            </div>
+                        </div>
+                        <div class="card-body no-padding" style="max-height:560px; overflow-y:auto" id="listProvinsiContainer">
+                            <div class="loading-spinner"><div class="spinner"></div>Memuat data provinsi...</div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Detail Kabupaten / Kota di Provinsi terpilih -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <h3 id="detailProvinsiTitle"><i class="fas fa-city"></i> Tingkat 3: Kabupaten / Kota</h3>
+                                <p id="detailProvinsiSubtitle" style="font-size:12px; color:var(--text-muted); margin-top:2px">Pilih provinsi di sebelah kiri untuk melihat daftar kabupaten/kota</p>
+                            </div>
+                            <span class="badge badge-info" id="badgeTotalKabKota">0 Kab/Kota</span>
+                        </div>
+                        <div class="card-body no-padding" style="max-height:560px; overflow-y:auto" id="listKabupatenContainer">
+                            <div class="empty-state">
+                                <i class="fas fa-hand-pointer"></i>
+                                <h4>Pilih salah satu provinsi</h4>
+                                <p>Daftar kabupaten/kota di provinsi tersebut akan ditampilkan di sini</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+        </div>
+    </main>
+</div>
+
+<!-- ============================================
+     MODAL: Detail Bencana
+     ============================================ -->
+<div id="modalDetailBencana" class="modal-overlay" onclick="if(event.target===this)closeModal('modalDetailBencana')">
+    <div class="modal" style="max-width:900px">
+        <div class="modal-header">
+            <h3><i class="fas fa-info-circle" style="color:var(--accent-primary)"></i> Detail Bencana</h3>
+            <button class="modal-close" onclick="closeModal('modalDetailBencana')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body" id="detailBencanaContent">
+            <div class="loading-spinner"><div class="spinner"></div>Memuat data...</div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================
+     MODAL: Form Bencana
+     ============================================ -->
+<div id="modalFormBencana" class="modal-overlay" onclick="if(event.target===this)closeModal('modalFormBencana')">
+    <div class="modal" style="max-width:800px">
+        <div class="modal-header">
+            <h3><i class="fas fa-plus-circle" style="color:var(--accent-primary)"></i> Tambah Data Bencana</h3>
+            <button class="modal-close" onclick="closeModal('modalFormBencana')"><i class="fas fa-times"></i></button>
+        </div>
+        <form id="formBencana" onsubmit="submitBencana(event)">
+            <div class="modal-body">
+                <div class="wilayah-crumb-box" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px">
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap">
+                        <i class="fas fa-sitemap" style="color:var(--accent-primary)"></i>
+                        <span style="font-weight:700; color:var(--text-primary); font-size:13px">Hierarki Wilayah:</span>
+                        <span class="wilayah-chip">
+                            <span class="chip-flag"><i class="fas fa-flag"></i> Indonesia</span>
+                            <span class="chip-arrow"><i class="fas fa-chevron-right"></i></span>
+                            <span class="chip-prov" id="crumbProvText">Pilih Provinsi</span>
+                            <span class="chip-arrow"><i class="fas fa-chevron-right"></i></span>
+                            <span class="chip-kab" id="crumbKabText">Pilih Kab/Kota</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="form-row-3" style="margin-bottom:16px">
+                    <div class="form-group">
+                        <label class="form-label">1. Tingkat Negara *</label>
+                        <select class="form-control" name="indonesia_id" id="inputNegara" disabled style="background:rgba(239,68,68,0.08); border-color:rgba(239,68,68,0.25); color:#fca5a5; font-weight:600">
+                            <option value="1">🇮🇩 Indonesia</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">2. Tingkat Provinsi *</label>
+                        <select class="form-control" name="provinsi_id" id="inputProvinsi" required onchange="onInputProvinsiChange(this.value)">
+                            <option value="">-- Pilih Provinsi --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">3. Tingkat Kab/Kota *</label>
+                        <select class="form-control" name="kabkota_id" id="inputKabKota" required onchange="updateWilayahPreview()">
+                            <option value="">-- Pilih Kab/Kota --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Jenis Bencana *</label>
+                        <select class="form-control" name="jenis_bencana_id" id="inputJenisBencana" required>
+                            <option value="">-- Pilih Jenis --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Judul Kejadian *</label>
+                        <input type="text" class="form-control" name="judul" placeholder="Masukkan judul kejadian bencana" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Deskripsi</label>
+                    <textarea class="form-control" name="deskripsi" placeholder="Deskripsi kejadian bencana..." rows="3"></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Tanggal Kejadian *</label>
+                        <input type="date" class="form-control" name="tanggal_kejadian" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Waktu Kejadian</label>
+                        <input type="time" class="form-control" name="waktu_kejadian">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Latitude</label>
+                        <input type="number" step="any" class="form-control" name="latitude" placeholder="Contoh: -6.2088">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Longitude</label>
+                        <input type="number" step="any" class="form-control" name="longitude" placeholder="Contoh: 106.8456">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Tingkat Kerusakan</label>
+                        <select class="form-control" name="tingkat_kerusakan">
+                            <option value="ringan">Ringan</option>
+                            <option value="sedang">Sedang</option>
+                            <option value="berat">Berat</option>
+                            <option value="sangat_berat">Sangat Berat</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select class="form-control" name="status">
+                            <option value="terjadi">Terjadi</option>
+                            <option value="tanggap_darurat">Tanggap Darurat</option>
+                            <option value="pemulihan">Pemulihan</option>
+                            <option value="selesai">Selesai</option>
+                        </select>
+                    </div>
+                </div>
+
+                <h4 style="font-size:14px;font-weight:700;margin:20px 0 12px;color:var(--accent-primary)">
+                    <i class="fas fa-users"></i> Data Korban & Kerusakan
+                </h4>
+
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label class="form-label">Meninggal</label>
+                        <input type="number" class="form-control" name="meninggal" value="0" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Hilang</label>
+                        <input type="number" class="form-control" name="hilang" value="0" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Luka Berat</label>
+                        <input type="number" class="form-control" name="luka_berat" value="0" min="0">
+                    </div>
+                </div>
+
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label class="form-label">Luka Ringan</label>
+                        <input type="number" class="form-control" name="luka_ringan" value="0" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Mengungsi</label>
+                        <input type="number" class="form-control" name="mengungsi" value="0" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Rumah Rusak Berat</label>
+                        <input type="number" class="form-control" name="rumah_rusak_berat" value="0" min="0">
+                    </div>
+                </div>
+
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label class="form-label">Rumah Rusak Sedang</label>
+                        <input type="number" class="form-control" name="rumah_rusak_sedang" value="0" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Rumah Rusak Ringan</label>
+                        <input type="number" class="form-control" name="rumah_rusak_ringan" value="0" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Estimasi Kerugian (Rp)</label>
+                        <input type="number" class="form-control" name="kerugian_estimasi" value="0" min="0">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('modalFormBencana')">
+                    <i class="fas fa-times"></i> Batal
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-check"></i> Simpan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Storage Engine (Vercel / Cloud / Offline Data Support) -->
+<script src="assets/js/client-storage.js"></script>
+<!-- Main JS -->
+<script src="assets/js/app.js"></script>
+
+</body>
+</html>
